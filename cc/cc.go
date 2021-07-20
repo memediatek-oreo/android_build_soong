@@ -61,6 +61,9 @@ type Deps struct {
 	StaticLibs, LateStaticLibs, WholeStaticLibs []string
 	HeaderLibs                                  []string
 
+	LegacySharedLibs                        []string
+	LegacyStaticLibs, LegacyWholeStaticLibs []string
+
 	ReexportSharedLibHeaders, ReexportStaticLibHeaders, ReexportHeaderLibHeaders []string
 
 	ObjFiles []string
@@ -80,6 +83,10 @@ type PathDeps struct {
 	SharedLibsDeps, LateSharedLibsDeps android.Paths
 	// Paths to .a files
 	StaticLibs, LateStaticLibs, WholeStaticLibs android.Paths
+
+	LegacySharedLibs                        android.Paths
+	LegacySharedLibsDeps                    android.Paths
+	LegacyStaticLibs, LegacyWholeStaticLibs android.Paths
 
 	// Paths to .o files
 	Objs               Objects
@@ -132,6 +139,10 @@ type Flags struct {
 	CFlagsDeps android.Paths // Files depended on by compiler flags
 
 	GroupStaticLibs bool
+
+	legacySharedLibs      []string
+	legacyStaticLibs      []string
+	legacyWholeStaticLibs []string
 }
 
 type ObjectLinkerProperties struct {
@@ -553,6 +564,32 @@ func (c *Module) GenerateAndroidBuildActions(actx android.ModuleContext) {
 		return
 	}
 	flags.GlobalFlags = append(flags.GlobalFlags, deps.Flags...)
+
+	// MTK customization
+	for _, lib := range flags.legacySharedLibs {
+		libPath := android.PathForLegacyModuleBuilt(ctx, "SHARED_LIBRARIES", lib, ".so")
+		tocPath := android.PathForLegacyModuleBuilt(ctx, "SHARED_LIBRARIES", lib, ".so.toc")
+		incPath := android.PathForLegacyModuleIntermediate(ctx, "SHARED_LIBRARIES", lib, "", "export_includes")
+		deps.LegacySharedLibs = append(deps.LegacySharedLibs, libPath)
+		deps.LegacySharedLibsDeps = append(deps.LegacySharedLibsDeps, tocPath)
+		flags.CFlagsDeps = append(flags.CFlagsDeps, incPath)
+		flags.CFlags = append(flags.CFlags, "$$(cat "+incPath.String()+")")
+	}
+	for _, lib := range flags.legacyStaticLibs {
+		libPath := android.PathForLegacyModuleBuilt(ctx, "STATIC_LIBRARIES", lib, ".a")
+		incPath := android.PathForLegacyModuleIntermediate(ctx, "STATIC_LIBRARIES", lib, "", "export_includes")
+		deps.LegacyStaticLibs = append(deps.LegacyStaticLibs, libPath)
+		flags.CFlagsDeps = append(flags.CFlagsDeps, incPath)
+		flags.CFlags = append(flags.CFlags, "$$(cat "+incPath.String()+")")
+	}
+	for _, lib := range flags.legacyWholeStaticLibs {
+		libPath := android.PathForLegacyModuleBuilt(ctx, "STATIC_LIBRARIES", lib, ".a")
+		incPath := android.PathForLegacyModuleIntermediate(ctx, "STATIC_LIBRARIES", lib, "", "export_includes")
+		deps.LegacyWholeStaticLibs = append(deps.LegacyWholeStaticLibs, libPath)
+		flags.CFlagsDeps = append(flags.CFlagsDeps, incPath)
+		flags.CFlags = append(flags.CFlags, "$$(cat "+incPath.String()+")")
+	}
+
 	c.flags = flags
 	// We need access to all the flags seen by a source file.
 	if c.sabi != nil {
@@ -666,6 +703,9 @@ func (c *Module) deps(ctx DepsContext) Deps {
 	deps.SharedLibs = lastUniqueElements(deps.SharedLibs)
 	deps.LateSharedLibs = lastUniqueElements(deps.LateSharedLibs)
 	deps.HeaderLibs = lastUniqueElements(deps.HeaderLibs)
+	deps.LegacyWholeStaticLibs = lastUniqueElements(deps.LegacyWholeStaticLibs)
+	deps.LegacyStaticLibs = lastUniqueElements(deps.LegacyStaticLibs)
+	deps.LegacySharedLibs = lastUniqueElements(deps.LegacySharedLibs)
 
 	for _, lib := range deps.ReexportSharedLibHeaders {
 		if !inList(lib, deps.SharedLibs) {
@@ -720,6 +760,8 @@ func (c *Module) DepsMutator(actx android.BottomUpMutatorContext) {
 	ctx.ctx = ctx
 
 	deps := c.deps(ctx)
+
+	c.Properties.AndroidMkSharedLibs = append(c.Properties.AndroidMkSharedLibs, deps.LegacySharedLibs...)
 
 	variantNdkLibs := []string{}
 	variantLateNdkLibs := []string{}

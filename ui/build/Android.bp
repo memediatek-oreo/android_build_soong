@@ -35,6 +35,8 @@ bootstrap_go_package {
         "signal.go",
         "soong.go",
         "util.go",
+        // MTK
+        "mediatek.go",
     ],
     testSrcs: [
         "config_test.go",

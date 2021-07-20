@@ -194,7 +194,7 @@ my_check_failed := false
 
 	fmt.Fprintln(buf, `
 ifneq ($(my_check_failed),false)
-  $(error Soong variable check failed)
+  #$(error Soong variable check failed)
 endif
 my_check_failed :=
 

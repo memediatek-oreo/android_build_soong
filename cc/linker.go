@@ -37,6 +37,16 @@ type BaseLinkerProperties struct {
 	// list of modules that should be dynamically linked into this module.
 	Shared_libs []string `android:"arch_variant"`
 
+	// MTK Customization: list of Android.mk modules whose object files should be linked into this Android.bp module
+	// in their entirety.  For static library modules, all of the .o files from the intermediate
+	// directory of the dependency will be linked into this modules .a file.  For a shared library,
+	// the dependency's .a file will be linked into this module using -Wl,--whole-archive.
+	Legacy_whole_static_libs []string `android:"arch_variant,variant_prepend"`
+	// MTK Customization: list of Android.mk modules that should be statically linked into this Android.bp module.
+	Legacy_static_libs []string `android:"arch_variant,variant_prepend"`
+	// MTK Customization: list of Android.mk modules that should be dynamically linked into this Android.bp module.
+	Legacy_shared_libs []string `android:"arch_variant"`
+
 	// list of modules that should only provide headers for this module.
 	Header_libs []string `android:"arch_variant,variant_prepend"`
 
@@ -130,6 +140,9 @@ func (linker *baseLinker) linkerDeps(ctx BaseModuleContext, deps Deps) Deps {
 	deps.HeaderLibs = append(deps.HeaderLibs, linker.Properties.Header_libs...)
 	deps.StaticLibs = append(deps.StaticLibs, linker.Properties.Static_libs...)
 	deps.SharedLibs = append(deps.SharedLibs, linker.Properties.Shared_libs...)
+	deps.LegacyWholeStaticLibs = append(deps.LegacyWholeStaticLibs, linker.Properties.Legacy_whole_static_libs...)
+	deps.LegacyStaticLibs = append(deps.LegacyStaticLibs, linker.Properties.Legacy_static_libs...)
+	deps.LegacySharedLibs = append(deps.LegacySharedLibs, linker.Properties.Legacy_shared_libs...)
 
 	deps.ReexportHeaderLibHeaders = append(deps.ReexportHeaderLibHeaders, linker.Properties.Export_header_lib_headers...)
 	deps.ReexportStaticLibHeaders = append(deps.ReexportStaticLibHeaders, linker.Properties.Export_static_lib_headers...)
@@ -240,6 +253,10 @@ func (linker *baseLinker) linkerFlags(ctx ModuleContext, flags Flags) Flags {
 	if Bool(linker.Properties.Group_static_libs) {
 		flags.GroupStaticLibs = true
 	}
+
+	flags.legacySharedLibs = append(flags.legacySharedLibs, linker.Properties.Legacy_shared_libs...)
+	flags.legacyStaticLibs = append(flags.legacyStaticLibs, linker.Properties.Legacy_static_libs...)
+	flags.legacyWholeStaticLibs = append(flags.legacyWholeStaticLibs, linker.Properties.Legacy_whole_static_libs...)
 
 	return flags
 }

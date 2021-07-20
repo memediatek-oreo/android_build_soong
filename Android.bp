@@ -33,6 +33,7 @@ bootstrap_go_package {
         "blueprint-bootstrap",
         "soong",
         "soong-env",
+        "soong-android-mediatek",
     ],
     srcs: [
         "android/androidmk.go",
@@ -54,6 +55,9 @@ bootstrap_go_package {
         "android/testing.go",
         "android/util.go",
         "android/variable.go",
+
+        // MTK customization
+        "android/mediatek.go",
 
         // Lock down environment access last
         "android/env.go",

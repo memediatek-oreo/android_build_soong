@@ -32,6 +32,10 @@ type LibraryProperties struct {
 		Whole_static_libs []string `android:"arch_variant"`
 		Static_libs       []string `android:"arch_variant"`
 		Shared_libs       []string `android:"arch_variant"`
+
+		Legacy_whole_static_libs []string `android:"arch_variant"`
+		Legacy_static_libs       []string `android:"arch_variant"`
+		Legacy_shared_libs       []string `android:"arch_variant"`
 	} `android:"arch_variant"`
 	Shared struct {
 		Srcs   []string `android:"arch_variant"`
@@ -41,6 +45,10 @@ type LibraryProperties struct {
 		Whole_static_libs []string `android:"arch_variant"`
 		Static_libs       []string `android:"arch_variant"`
 		Shared_libs       []string `android:"arch_variant"`
+
+		Legacy_whole_static_libs []string `android:"arch_variant"`
+		Legacy_static_libs       []string `android:"arch_variant"`
+		Legacy_shared_libs       []string `android:"arch_variant"`
 	} `android:"arch_variant"`
 
 	// local file name to pass to the linker as --version_script
@@ -434,6 +442,9 @@ func (library *libraryDecorator) linkerDeps(ctx DepsContext, deps Deps) Deps {
 			library.Properties.Static.Whole_static_libs...)
 		deps.StaticLibs = append(deps.StaticLibs, library.Properties.Static.Static_libs...)
 		deps.SharedLibs = append(deps.SharedLibs, library.Properties.Static.Shared_libs...)
+		deps.LegacyWholeStaticLibs = append(deps.LegacyWholeStaticLibs, library.Properties.Static.Legacy_whole_static_libs...)
+		deps.LegacyStaticLibs = append(deps.LegacyStaticLibs, library.Properties.Static.Legacy_static_libs...)
+		deps.LegacySharedLibs = append(deps.LegacySharedLibs, library.Properties.Static.Legacy_shared_libs...)
 	} else if library.shared() {
 		if ctx.toolchain().Bionic() && !Bool(library.baseLinker.Properties.Nocrt) {
 			if !ctx.sdk() {
@@ -455,6 +466,9 @@ func (library *libraryDecorator) linkerDeps(ctx DepsContext, deps Deps) Deps {
 		deps.WholeStaticLibs = append(deps.WholeStaticLibs, library.Properties.Shared.Whole_static_libs...)
 		deps.StaticLibs = append(deps.StaticLibs, library.Properties.Shared.Static_libs...)
 		deps.SharedLibs = append(deps.SharedLibs, library.Properties.Shared.Shared_libs...)
+		deps.LegacyWholeStaticLibs = append(deps.LegacyWholeStaticLibs, library.Properties.Shared.Legacy_whole_static_libs...)
+		deps.LegacyStaticLibs = append(deps.LegacyStaticLibs, library.Properties.Shared.Legacy_static_libs...)
+		deps.LegacySharedLibs = append(deps.LegacySharedLibs, library.Properties.Shared.Legacy_shared_libs...)
 	}
 
 	return deps
@@ -552,6 +566,7 @@ func (library *libraryDecorator) linkShared(ctx ModuleContext,
 	}
 
 	sharedLibs := deps.SharedLibs
+	sharedLibs = append(sharedLibs, deps.LegacySharedLibs...)
 	sharedLibs = append(sharedLibs, deps.LateSharedLibs...)
 
 	// TODO(danalbert): Clean this up when soong supports prebuilts.
@@ -574,11 +589,17 @@ func (library *libraryDecorator) linkShared(ctx ModuleContext,
 	}
 
 	linkerDeps = append(linkerDeps, deps.SharedLibsDeps...)
+	linkerDeps = append(linkerDeps, deps.LegacySharedLibsDeps...)
 	linkerDeps = append(linkerDeps, deps.LateSharedLibsDeps...)
 	linkerDeps = append(linkerDeps, objs.tidyFiles...)
 
+	staticLibs := deps.StaticLibs
+	staticLibs = append(staticLibs, deps.LegacyStaticLibs...)
+	wholeStaticLibs := deps.WholeStaticLibs
+	wholeStaticLibs = append(wholeStaticLibs, deps.LegacyWholeStaticLibs...)
+
 	TransformObjToDynamicBinary(ctx, objs.objFiles, sharedLibs,
-		deps.StaticLibs, deps.LateStaticLibs, deps.WholeStaticLibs,
+		staticLibs, deps.LateStaticLibs, wholeStaticLibs,
 		linkerDeps, deps.CrtBegin, deps.CrtEnd, false, builderFlags, outputFile)
 
 	objs.coverageFiles = append(objs.coverageFiles, deps.StaticLibObjs.coverageFiles...)

@@ -380,10 +380,11 @@ func (c *configImpl) SoongMakeVarsMk() string {
 }
 
 func (c *configImpl) ProductOut() string {
+	// MTK customization
 	if buildType, ok := c.environ.Get("TARGET_BUILD_TYPE"); ok && buildType == "debug" {
-		return filepath.Join(c.OutDir(), "debug", "target", "product", c.TargetDevice())
+		return filepath.Join(c.OutDir(), "debug", "target", "product", c.MtkTargetProjectName())
 	} else {
-		return filepath.Join(c.OutDir(), "target", "product", c.TargetDevice())
+		return filepath.Join(c.OutDir(), "target", "product", c.MtkTargetProjectName())
 	}
 }
 

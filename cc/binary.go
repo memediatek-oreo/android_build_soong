@@ -289,7 +289,12 @@ func (binary *binaryDecorator) link(ctx ModuleContext,
 	var linkerDeps android.Paths
 
 	sharedLibs := deps.SharedLibs
+	sharedLibs = append(sharedLibs, deps.LegacySharedLibs...)
 	sharedLibs = append(sharedLibs, deps.LateSharedLibs...)
+	staticLibs := deps.StaticLibs
+	staticLibs = append(staticLibs, deps.LegacyStaticLibs...)
+	wholeStaticLibs := deps.WholeStaticLibs
+	wholeStaticLibs = append(wholeStaticLibs, deps.LegacyWholeStaticLibs...)
 
 	if flags.DynamicLinker != "" {
 		flags.LdFlags = append(flags.LdFlags, " -Wl,-dynamic-linker,"+flags.DynamicLinker)
@@ -311,11 +316,12 @@ func (binary *binaryDecorator) link(ctx ModuleContext,
 	}
 
 	linkerDeps = append(linkerDeps, deps.SharedLibsDeps...)
+	linkerDeps = append(linkerDeps, deps.LegacySharedLibsDeps...)
 	linkerDeps = append(linkerDeps, deps.LateSharedLibsDeps...)
 	linkerDeps = append(linkerDeps, objs.tidyFiles...)
 
-	TransformObjToDynamicBinary(ctx, objs.objFiles, sharedLibs, deps.StaticLibs,
-		deps.LateStaticLibs, deps.WholeStaticLibs, linkerDeps, deps.CrtBegin, deps.CrtEnd, true,
+	TransformObjToDynamicBinary(ctx, objs.objFiles, sharedLibs, staticLibs,
+		deps.LateStaticLibs, wholeStaticLibs, linkerDeps, deps.CrtBegin, deps.CrtEnd, true,
 		builderFlags, outputFile)
 
 	objs.coverageFiles = append(objs.coverageFiles, deps.StaticLibObjs.coverageFiles...)

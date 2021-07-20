@@ -695,7 +695,8 @@ func PathForModuleInstall(ctx ModuleInstallPathContext, pathComponents ...string
 		if ctx.InstallInSanitizerDir() {
 			partition = "data/asan/" + partition
 		}
-		outPaths = []string{"target", "product", ctx.AConfig().DeviceName(), partition}
+		// MTK customization
+		outPaths = []string{"target", "product", ctx.AConfig().MtkTargetProjectName(), partition}
 	} else {
 		outPaths = []string{"host", ctx.Os().String() + "-x86"}
 	}

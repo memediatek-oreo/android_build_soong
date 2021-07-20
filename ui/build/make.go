@@ -165,4 +165,7 @@ func runMakeProductConfig(ctx Context, config Config) {
 	config.SetKatiArgs(strings.Fields(make_vars["KATI_GOALS"]))
 	config.SetNinjaArgs(strings.Fields(make_vars["NINJA_GOALS"]))
 	config.SetTargetDevice(make_vars["TARGET_DEVICE"])
+
+	// MTK customization
+	MtkDumpMakeVars(ctx, config)
 }
